@@ -1,0 +1,23 @@
+Using HTML and Javascript, and CSS.
+
+I am making a 2d game entirely in a <canvas> tag. The canvas tag must fill the entire browser window with no border or gaps, and must resize to the size of the window.
+
+Also it will be accessed on mobile so please take necessary precautions for example: no scroll bars.
+
+Gameplay:
+You control the character in middle, and the top down camera translation moves in a smooth motion to the x, and y of the main player.
+
+Controls:
+Because it is supposed to work on mobile, there should be a track pad graphic that's drawn into the canvas on the bottom, where the mouse press and hold (which i think is activated when on mobile you touch and drag) Please make this track pad graphic show the direction the player is dragging in a stylized way in a smooth way.  And have it fade out if no input is given.
+(touch mouse drag, or keypad presses, oh and also arrow keys can be used to move the main player)
+
+Entity Management system:
+The player itself would probably be the first entity added to the global "entities" array which contains all the active entities.
+There are enemy entities that spawn periodically and move towards the player entity.
+Make the entity objects all have x,y, values so we know where to draw their sprites, 
+And an entity type flag that tells them to move in unique ways.
+And every entity also has a health value.
+
+User Interface:
+When the player has not inputted commands in a second or two, the UI buttons which the 4 buttons for each corner of the screen fade into view.
+ 
