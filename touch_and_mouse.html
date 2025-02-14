@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>2D Canvas Game</title>
+  <style>
+    /* Reset and basic styles for mobile: no margins, no scroll bars, no selection */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      background: #222;
+    }
+    /* UI Buttons (four corners) */
+    .ui-button {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid #fff;
+      border-radius: 10px;
+      pointer-events: auto;
+      user-select: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    #btn-top-left    { top: 10px; left: 10px; }
+    #btn-top-right   { top: 10px; right: 10px; }
+    #btn-bottom-left { bottom: 10px; left: 10px; }
+    #btn-bottom-right{ bottom: 10px; right: 10px; }
+    /* Powerup Popup */
+    #powerup-popup {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.5s;
+      pointer-events: none;
+    }
+    #powerup-popup.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #powerup-container {
+      background: #333;
+      padding: 20px;
+      border-radius: 10px;
+      display: flex;
+      gap: 20px;
+    }
+    .powerup {
+      width: 100px;
+      height: 100px;
+      background: #555;
+      border: 2px solid #fff;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .powerup:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Main game canvas -->
+  <canvas id="gameCanvas"></canvas>
+  
+  <!-- UI Buttons overlay (they fade in after inactivity) -->
+  <div id="btn-top-left" class="ui-button">TL</div>
+  <div id="btn-top-right" class="ui-button">TR</div>
+  <div id="btn-bottom-left" class="ui-button">BL</div>
+  <div id="btn-bottom-right" class="ui-button">BR</div>
+  
+  <!-- Powerup popup overlay (appears every 45 seconds) -->
+  <div id="powerup-popup">
+    <div id="powerup-container">
+      <div class="powerup" data-power="power1">Power 1</div>
+      <div class="powerup" data-power="power2">Power 2</div>
+      <div class="powerup" data-power="power3">Power 3</div>
+    </div>
+  </div>
+  
+  <script>
+    /**********************
+     * SETUP AND UTILITIES
+     **********************/
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Resize the canvas to fill the browser window
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    
+    // Global game variables
+    let lastTime = 0;
+    let entities = [];
+    let keys = {};
+    let lastInputTime = Date.now();
+    
+    // Camera (smooth follow)
+    const camera = {
+      x: 0,
+      y: 0,
+      smoothSpeed: 0.1
+    };
+    
+    /**********************
+     * ENTITY MANAGEMENT
+     **********************/
+    // The player entity (first in the entities array)
+    const player = {
+      x: 0,
+      y: 0,
+      health: 100,
+      type: 'player',
+      spriteIndex: 0,
+      // spriteFrames is an array of base64 strings for each frame
+      spriteFrames: [
+        // Add your base64 player sprite strings here, for example:
+        // 'data:image/png;base64,INSERT_BASE64_STRING_HERE'
+      ]
+    };
+    entities.push(player);
+    
+    // Enemy spawn control
+    const enemySpawnInterval = 2000; // spawn an enemy every 2 seconds
+    let lastEnemySpawnTime = Date.now();
+    
+    // Function to spawn a new enemy entity
+    function spawnEnemy() {
+      const enemy = {
+        x: player.x + (Math.random() - 0.5) * 800,
+        y: player.y + (Math.random() - 0.5) * 800,
+        health: 50,
+        // Randomly choose an enemy type
+        type: Math.random() < 0.5 ? 'chaser' : 'spiral',
+        angle: 0, // used for spiral movement
+        spriteFrames: [
+          // Add your base64 enemy sprite strings here, e.g.,
+          // 'data:image/png;base64,INSERT_BASE64_STRING_HERE'
+        ]
+      };
+      entities.push(enemy);
+    }
+    
+    /**********************
+     * INPUT & CONTROLS
+     **********************/
+    // Keyboard input (arrow keys / WASD)
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      lastInputTime = Date.now();
+      hideUIButtons();
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key] = false;
+    });
+    
+    // Trackpad input for mobile (mouse and touch)
+    const trackpad = {
+      active: false,
+      startX: 0,
+      startY: 0,
+      currentX: 0,
+      currentY: 0,
+      opacity: 0,
+      fadeTimer: null
+    };
+    
+    function startTrackpad(e) {
+      trackpad.active = true;
+      trackpad.startX = e.clientX;
+      trackpad.startY = e.clientY;
+      trackpad.currentX = e.clientX;
+      trackpad.currentY = e.clientY;
+      trackpad.opacity = 1;
+      lastInputTime = Date.now();
+      hideUIButtons();
+      if (trackpad.fadeTimer) clearTimeout(trackpad.fadeTimer);
+    }
+    function moveTrackpad(e) {
+      if (!trackpad.active) return;
+      trackpad.currentX = e.clientX;
+      trackpad.currentY = e.clientY;
+      lastInputTime = Date.now();
+      hideUIButtons();
+    }
+    function endTrackpad() {
+      trackpad.active = false;
+      // Fade out the trackpad graphic after a short delay
+      trackpad.fadeTimer = setTimeout(() => { trackpad.opacity = 0; }, 500);
+    }
+    
+    // Mouse events
+    canvas.addEventListener('mousedown', startTrackpad);
+    canvas.addEventListener('mousemove', moveTrackpad);
+    canvas.addEventListener('mouseup', endTrackpad);
+    
+    // Touch events (prevent default to avoid scrolling)
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      startTrackpad(e.touches[0]);
+    }, {passive: false});
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      moveTrackpad(e.touches[0]);
+    }, {passive: false});
+    canvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      endTrackpad();
+    });
+    
+    /**********************
+     * UI BUTTONS MANAGEMENT
+     **********************/
+    const uiButtons = document.querySelectorAll('.ui-button');
+    function showUIButtons() {
+      uiButtons.forEach(btn => {
+        btn.style.opacity = 1;
+      });
+    }
+    function hideUIButtons() {
+      uiButtons.forEach(btn => {
+        btn.style.opacity = 0;
+      });
+    }
+    // Check for inactivity and fade in UI buttons after ~1.5 seconds
+    function checkUIInactivity() {
+      if (Date.now() - lastInputTime > 1500) {
+        showUIButtons();
+      }
+    }
+    
+    /**********************
+     * POWERUP POPUP
+     **********************/
+    const powerupPopup = document.getElementById('powerup-popup');
+    const powerupElements = document.querySelectorAll('.powerup');
+    const powerupInterval = 45000; // every 45 seconds
+    let lastPowerupTime = Date.now();
+    
+    function showPowerupPopup() {
+      powerupPopup.classList.add('active');
+      // You might pause game logic here if desired.
+    }
+    // When a powerup is clicked, apply its effect and fade out the popup
+    powerupElements.forEach(elem => {
+      elem.addEventListener('click', () => {
+        console.log('Powerup selected:', elem.dataset.power);
+        powerupPopup.classList.remove('active');
+      });
+    });
+    
+    /**********************
+     * GAME UPDATE & RENDER
+     **********************/
+    function update(deltaTime) {
+      // ---- Player movement ----
+      let moveX = 0, moveY = 0;
+      const speed = 200; // pixels per second
+      
+      // Keyboard input (arrow keys / WASD)
+      if (keys['ArrowUp'] || keys['w'])    moveY -= 1;
+      if (keys['ArrowDown'] || keys['s'])    moveY += 1;
+      if (keys['ArrowLeft'] || keys['a'])    moveX -= 1;
+      if (keys['ArrowRight'] || keys['d'])   moveX += 1;
+      
+      // Normalize the vector if needed
+      if (moveX !== 0 || moveY !== 0) {
+        const len = Math.hypot(moveX, moveY);
+        moveX /= len;
+        moveY /= len;
+      }
+      
+      // Trackpad drag adds to movement direction
+      if (trackpad.active) {
+        let dx = trackpad.currentX - trackpad.startX;
+        let dy = trackpad.currentY - trackpad.startY;
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+          dx /= len;
+          dy /= len;
+          moveX += dx;
+          moveY += dy;
+          const total = Math.hypot(moveX, moveY);
+          if (total > 0) {
+            moveX /= total;
+            moveY /= total;
+          }
+        }
+      }
+      
+      // Update player position
+      player.x += moveX * speed * deltaTime;
+      player.y += moveY * speed * deltaTime;
+      
+      // ---- Camera smooth follow ----
+      camera.x += (player.x - camera.x) * camera.smoothSpeed;
+      camera.y += (player.y - camera.y) * camera.smoothSpeed;
+      
+      // ---- Update enemy entities ----
+      for (let entity of entities) {
+        if (entity.type === 'chaser') {
+          // Direct chase toward the player
+          let dx = player.x - entity.x;
+          let dy = player.y - entity.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 0) {
+            dx /= dist;
+            dy /= dist;
+            entity.x += dx * (speed * 0.5) * deltaTime;
+            entity.y += dy * (speed * 0.5) * deltaTime;
+          }
+        } else if (entity.type === 'spiral') {
+          // Spiral movement toward the player
+          let dx = player.x - entity.x;
+          let dy = player.y - entity.y;
+          const angleToPlayer = Math.atan2(dy, dx);
+          entity.angle += deltaTime * 5; // controls spiral rotation speed
+          const spiralAngle = angleToPlayer + Math.sin(entity.angle) * 0.5;
+          entity.x += Math.cos(spiralAngle) * (speed * 0.4) * deltaTime;
+          entity.y += Math.sin(spiralAngle) * (speed * 0.4) * deltaTime;
+        }
+      }
+      
+      // ---- Spawn Enemies ----
+      if (Date.now() - lastEnemySpawnTime > enemySpawnInterval) {
+        spawnEnemy();
+        lastEnemySpawnTime = Date.now();
+      }
+      
+      // ---- Powerup Popup Logic ----
+      if (Date.now() - lastPowerupTime > powerupInterval) {
+        showPowerupPopup();
+        lastPowerupTime = Date.now();
+      }
+      
+      // ---- UI Inactivity Check ----
+      checkUIInactivity();
+    }
+    
+    function render() {
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Save and apply camera transform so player stays centered
+      ctx.save();
+      ctx.translate(canvas.width / 2 - camera.x, canvas.height / 2 - camera.y);
+      
+      // Render all entities
+      entities.forEach(entity => {
+        if (entity.type === 'player') {
+          ctx.fillStyle = 'blue';
+          ctx.beginPath();
+          ctx.arc(entity.x, entity.y, 20, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Enemies: red for chasers, orange for spiral types
+          ctx.fillStyle = (entity.type === 'chaser') ? 'red' : 'orange';
+          ctx.beginPath();
+          ctx.arc(entity.x, entity.y, 15, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+      ctx.restore();
+      
+      // ---- Draw the Trackpad Graphic ----
+      if (trackpad.opacity > 0) {
+        ctx.save();
+        ctx.globalAlpha = trackpad.opacity;
+        // Draw a fixed circle near the bottom center as the trackpad base
+        const padX = canvas.width / 2;
+        const padY = canvas.height - 100;
+        const radius = 50;
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(padX, padY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        // If dragging, draw an indicator line for the drag direction
+        if (trackpad.active) {
+          let dx = trackpad.currentX - trackpad.startX;
+          let dy = trackpad.currentY - trackpad.startY;
+          const len = Math.hypot(dx, dy);
+          if (len > 0) {
+            dx /= len;
+            dy /= len;
+            ctx.beginPath();
+            ctx.moveTo(padX, padY);
+            ctx.lineTo(padX + dx * radius, padY + dy * radius);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+    }
+    
+    // Main game loop using requestAnimationFrame
+    function gameLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const deltaTime = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+      
+      update(deltaTime);
+      render();
+      
+      requestAnimationFrame(gameLoop);
+    }
+    requestAnimationFrame(gameLoop);
+    
+  </script>
+</body>
+</html>

@@ -17,7 +17,17 @@ There are enemy entities that spawn periodically and move towards the player ent
 Make the entity objects all have x,y, values so we know where to draw their sprites, 
 And an entity type flag that tells them to move in unique ways.
 And every entity also has a health value.
+The enemies should spawn once every couple seconds and move towards the player,
+And some enemy types take like a spiral path towards the enemy.
 
 User Interface:
-When the player has not inputted commands in a second or two, the UI buttons which the 4 buttons for each corner of the screen fade into view.
+When the player has not inputted commands in a second or two, the UI buttons which the 4 buttons for each corner of the screen fade into view so that they can be clicked.
+All buttons can be no-select and highlight disabled divs sitting on top of the main <canvas>
+
+To load the sprites, each sprite is defined by a string array of base 64 strings that represent a png file that is one frame for that sprite.  The size of the sprite is set by the dimensions of the first sprite frame.
+Please show me where to add these base 64 strings in your implementation.
+
+The entire game is going to be like Vampire Survivor game mechanics, so please once every 45 seconds show a pop up screen where three powerups are displayed in a stylized beautiful way (this could be a no-select, highlight disabled div that appears on top of the main <canvas> ) and when the powerup is selected it disappears in a smooth way and the game resumes.
+
+Please consolidate this program in one index.html file.
  
