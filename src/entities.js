@@ -10,12 +10,56 @@ const ENTITY_SEEDLING = 3;
     // multipliers u can hit 
     // 
 
+function calculateSpiralCoordinates(index, radius) {
+    // The golden angle in radians
+    const goldenAngle = 2.39996323; // Approximately 360° / ϕ^2
+
+    // Convert the index to a float for calculations
+    const idx = index;
+
+    // Calculate the angle and distance from the center
+    const angle = idx * goldenAngle;
+    const distance = radius * Math.sqrt(idx);
+
+    // Compute x and y coordinates
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+
+    return [x, y, distance];
+}
+
+function springForce(x1, y1, x2, y2, k, restLength) {
+    // Compute the difference in position
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    
+    // Compute the distance
+    let distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance === 0) return { fx: 0, fy: 0 }; // Prevent divide by zero
+    
+    // Compute the force magnitude
+    let forceMagnitude = -k * (distance - restLength);
+    
+    // Compute the unit vector
+    let ux = dx / distance;
+    let uy = dy / distance;
+    
+    // Compute the force components
+    let fx = forceMagnitude * ux;
+    let fy = forceMagnitude * uy;
+    
+    return { fx, fy };
+}
+
+    
 
 function getNewEntity( xx, yy, healt, type, sprites ){
     let nuent = {};
 
     nuent.x = xx;
     nuent.y = yy;
+    nuent.vx = 0;
+    nuent.vy = 0;
     nuent.health = healt;
     nuent.type = type;
 
@@ -58,24 +102,6 @@ function spawnPlayer(xxx, yyy ) {
 // Enemy spawn control
 const enemySpawnInterval = 1000; // spawn an enemy every 2 seconds
 var lastEnemySpawnTime = Date.now();
-
-function calculateSpiralCoordinates(index, radius) {
-    // The golden angle in radians
-    const goldenAngle = 2.39996323; // Approximately 360° / ϕ^2
-
-    // Convert the index to a float for calculations
-    const idx = index;
-
-    // Calculate the angle and distance from the center
-    const angle = idx * goldenAngle;
-    const distance = radius * Math.sqrt(idx);
-
-    // Compute x and y coordinates
-    const x = Math.cos(angle) * distance;
-    const y = Math.sin(angle) * distance;
-
-    return [x, y, distance];
-}
 
     
     // Function to spawn a new enemy entity
@@ -135,7 +161,10 @@ function updateEntities(){
 
         }
         else if (entity.type === ENTITY_ENEMY) {
-            let speed = 200;
+            let speed = 23;
+
+            speed -= entity.seedlists.length*2;
+
             // Direct chase toward the player
             let dx = player.x - entity.x;
             let dy = player.y - entity.y;
@@ -143,8 +172,17 @@ function updateEntities(){
             if (dist > 0) {
                 dx /= dist;
                 dy /= dist;
-                entity.x += dx * (speed * 0.5) * deltaTime;
-                entity.y += dy * (speed * 0.5) * deltaTime;
+                entity.vx += dx * (speed * 0.5) * deltaTime;
+                entity.vy += dy * (speed * 0.5) * deltaTime;
+            }
+
+            for(let i = 0;i < entity.seedlists.length;i++){
+                
+                let frcs = springForce( entity.seedlists[i].x, entity.seedlists[i].y,
+                    entity.x, entity.y, 0.003, 30 + (50 * Math.sin( CUG.step / 87 )) );
+
+                entity.vx += frcs.fx;
+                entity.vy += frcs.fy;
             }
         }  
         else if (entity.type === ENTITY_SEEDLING) {
@@ -178,22 +216,21 @@ function updateEntities(){
                 else{
                     let coors = calculateSpiralCoordinates( foundIndex, 20 );
 
-                    let speed = 300;
+                    let speed = 44;
 
-                    let movspirOffX = 0;//coors[2] * Math.cos( CUG.step / 120 );
-                    let movspirOffY = 0;//coors[2] * Math.sin( CUG.step / 120 );
-
+                    let movspirOffX = 14*Math.cos( CUG.step / 120 );//0;//coors[2] * Math.cos( CUG.step / 120 );
+                    let movspirOffY = 12*Math.sin( CUG.step / 140 ) * Math.cos( CUG.step / 90 );//0;//coors[2] * Math.sin( CUG.step / 120 );
 
                     // Direct chase toward the player
                     let dx = (player.x+coors[0]+movspirOffX) - entity.x;
                     let dy = (player.y+coors[1]+movspirOffY) - entity.y;
 
-                    const dist = Math.hypot(dx, dy);
-                    if (dist > 0) {
+                    const dist = Math.hypot( dx, dy );
+                    if ( dist > 0 ) {
                         dx /= dist;
                         dy /= dist;
-                        entity.x += dx * (speed * 0.5) * deltaTime;
-                        entity.y += dy * (speed * 0.5) * deltaTime;
+                        entity.vx += dx * ( speed * 0.5 ) * deltaTime;
+                        entity.vy += dy * ( speed * 0.5 ) * deltaTime;
                     }
 
                     // Attach to enemy instead it is closest 
@@ -201,6 +238,8 @@ function updateEntities(){
                         entity.mode = 2;// set tp agro
                         entity.targetEntity = CUG.enemies[closestEnem];
                         CUG.enemies[closestEnem].seedlists.push(entity);
+
+                        player.seedlists.splice( foundIndex, 1 );
                     }
                 } 
             }
@@ -211,19 +250,62 @@ function updateEntities(){
                 let speed = 300;
 
                 // Direct chase toward the player
-                let dx = (entity.targetEntity.x) - entity.x;
-                let dy = (entity.targetEntity.y) - entity.y;
+                let dx = ( entity.targetEntity.x ) - entity.x;
+                let dy = ( entity.targetEntity.y ) - entity.y;
 
-                const dist = Math.hypot(dx, dy);
-                if (dist > 0) {
-                    dx /= dist;
-                    dy /= dist;
-                    entity.x += dx * (speed * 0.5) * deltaTime;
-                    entity.y += dy * (speed * 0.5) * deltaTime;
+                let frcs = springForce( entity.targetEntity.x, entity.targetEntity.y,
+                    entity.x, entity.y, 0.008, 40 + (20 * Math.sin( CUG.step / 14 )) );
+
+
+                let friends = entity.targetEntity.seedlists;
+                for(let i = 0;i < friends.length;i++){
+                    let entToCheckPushBack = null;
+                    if(friends[i] !== entity ){ // if not u, check if u can collide  
+                        entToCheckPushBack = friends[i];
+                    }
+                    else{
+                        entToCheckPushBack = entity.targetEntity;
+                    }
+
+                    let dx = friends[i].x - entity.x;
+                    let dy = friends[i].y - entity.y;
+                    
+                    // Compute the distance
+                    let distance = Math.sqrt(dx * dx + dy * dy); 
+                    distance = Math.max(0.001, distance);
+                        
+                    
+                    // Compute the unit vector
+                    let ux = (dx / distance)*0.4;
+                    let uy = (dy / distance)*0.4;
+
+                    if(distance < 30 ){
+                        entity.vx -= ux;
+                        entity.vy -= uy;
+                    }
                 }
+                // const dist = Math.hypot(dx, dy);
+                // if (dist > 0) {
+                //     dx /= dist;
+                //     dy /= dist;
+                //     entity.vx += dx * (speed * 0.5) * deltaTime;
+                //     entity.vy += dy * (speed * 0.5) * deltaTime;
+
+                // }
+                
+                entity.vx += frcs.fx;
+                entity.vy += frcs.fy;
+
             }
 
         }
+
+
+        entity.vx *= 0.93;
+        entity.vy *= 0.93;
+
+        entity.x += entity.vx;
+        entity.y += entity.vy;
 
         //End of update pass
     }

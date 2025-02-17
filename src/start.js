@@ -35,7 +35,7 @@ function resetGame( configger ){
 function update(){//deltaTime) {
     // ---- Player movement ----
     let moveX = 0, moveY = 0;
-    const speed = 200; // pixels per second
+    const speed = 20; // pixels per second
 
     // Keyboard input (arrow keys / WASD)
     if (keys['ArrowUp'] || keys['w'])    moveY -= 1;
@@ -69,8 +69,14 @@ function update(){//deltaTime) {
     }
 
     // Update player position
-    player.x += moveX * speed * deltaTime;
-    player.y += moveY * speed * deltaTime;
+    player.vx += moveX * speed * deltaTime;
+    player.vy += moveY * speed * deltaTime;
+
+    player.vx *= 0.93;
+    player.vy *= 0.93;
+
+    player.x += player.vx;
+    player.y += player.vy;
 
     // ---- Camera smooth follow ----
     camera.x += (player.x - camera.x) * camera.smoothSpeed;
