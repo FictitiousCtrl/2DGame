@@ -5,7 +5,8 @@
 var CUG = {
     seed: '',
     entities: [],
-    step: 0
+    step: 0,
+    enemies: []
 };
 var player = null;
 
@@ -19,10 +20,11 @@ function resetGame( configger ){
     CUG.seed = ''+configger.startingSeed;
     CUG.entities = [];
     CUG.step = 0;
+    CUG.enemies = [];// list of all the running entities
 
     player = spawnPlayer( 0, 0);
 
-    CUG.entities.push(player); 
+    CUG.entities.push(player);
 }
 
 
@@ -85,6 +87,7 @@ function update(){//deltaTime) {
         if( eventType < 0.2 ){
             let enemy = spawnEnemy(player.x, player.y);
             CUG.entities.push(enemy);
+            CUG.enemies.push(enemy);
             lastEnemySpawnTime = Date.now();
         }
         // ---- Spawn seedling --- 

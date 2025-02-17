@@ -27,6 +27,10 @@ function getNewEntity( xx, yy, healt, type, sprites ){
 
     nuent.seedlists = []; // Index for close by seedlings
 
+    nuent.maxCapacity = 10;// standard max capacity in its own seedlists val
+
+    nuent.targetEntity = null;
+
     nuent.spriteIndex = 0;
     nuent.spriteFrames = sprites;
 
@@ -47,6 +51,7 @@ function spawnPlayer(xxx, yyy ) {
         ]
     );
     
+    plyr.maxCapacity = 99999;
     return plyr;
 }
     
@@ -146,10 +151,23 @@ function updateEntities(){
             // Seedling is under control of player somwhere
             if( entity.mode === 1 ){
 
+                // Find self in the player lilst
                 let foundIndex = -1;
                 for(let i = 0;i < player.seedlists.length;i++){
                     if(player.seedlists[i] === entity){
                         foundIndex = i;
+                    }
+                }
+
+                // Look for closest thing of interest - go through the enemies i guess?
+                let closestEnem = -1;
+                let closestDist = 9999999999;
+                for(let i = 0;i < CUG.enemies.length;i++){
+                    let ddist = Math.hypot(entity.x-CUG.enemies[i].x, entity.y-CUG.enemies[i].y);
+
+                    if(ddist < 80 && ddist < closestDist && CUG.enemies[i].seedlists.length < CUG.enemies[i].maxCapacity){
+                        closestEnem = i;
+                        closestDist = ddist;
                     }
                 }
 
@@ -177,11 +195,48 @@ function updateEntities(){
                         entity.x += dx * (speed * 0.5) * deltaTime;
                         entity.y += dy * (speed * 0.5) * deltaTime;
                     }
-                }
 
-
+                    // Attach to enemy instead it is closest 
+                    if( closestEnem > -1 ){
+                        entity.mode = 2;// set tp agro
+                        entity.targetEntity = CUG.enemies[closestEnem];
+                        CUG.enemies[closestEnem].seedlists.push(entity);
+                    }
+                } 
             }
-        }  
+            
+            // Seedling is aggro'd on something
+            else if( entity.mode === 2 ){
+                
+                let speed = 300;
+
+                // Direct chase toward the player
+                let dx = (entity.targetEntity.x) - entity.x;
+                let dy = (entity.targetEntity.y) - entity.y;
+
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                    dx /= dist;
+                    dy /= dist;
+                    entity.x += dx * (speed * 0.5) * deltaTime;
+                    entity.y += dy * (speed * 0.5) * deltaTime;
+                }
+            }
+
+        }
+
+        //End of update pass
+    }
+
+
+    
+    // if health is 0 or smaller, remove it i guess?
+    for(let j = CUG.entities.length-1;j > -1;j--){
+        let entity = CUG.entities[j];
+        if( entity.health <= 0 ){
+
+        }
+
     }
 }
 

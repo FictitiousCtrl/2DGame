@@ -5,7 +5,8 @@
 var CUG = {
     seed: '',
     entities: [],
-    step: 0
+    step: 0,
+    enemies: []
 };
 var player = null;
 
@@ -18,9 +19,10 @@ var player = null;
 const ENTITY_PLAYER = 1;
 const ENTITY_ENEMY = 2;
 const ENTITY_SEEDLING = 3;
-    // larger weighted entities 
-    //      multiple different colors
-    //
+    // have the seedlings break off to do stuff 
+    // traps u can run into and hurt 
+    // multipliers u can hit 
+    // 
 
 
 function getNewEntity( xx, yy, healt, type, sprites ){
@@ -38,6 +40,10 @@ function getNewEntity( xx, yy, healt, type, sprites ){
                             // 1 - under player control
 
     nuent.seedlists = []; // Index for close by seedlings
+
+    nuent.maxCapacity = 10;// standard max capacity in its own seedlists val
+
+    nuent.targetEntity = null;
 
     nuent.spriteIndex = 0;
     nuent.spriteFrames = sprites;
@@ -59,6 +65,7 @@ function spawnPlayer(xxx, yyy ) {
         ]
     );
     
+    plyr.maxCapacity = 99999;
     return plyr;
 }
     
@@ -158,10 +165,23 @@ function updateEntities(){
             // Seedling is under control of player somwhere
             if( entity.mode === 1 ){
 
+                // Find self in the player lilst
                 let foundIndex = -1;
                 for(let i = 0;i < player.seedlists.length;i++){
                     if(player.seedlists[i] === entity){
                         foundIndex = i;
+                    }
+                }
+
+                // Look for closest thing of interest - go through the enemies i guess?
+                let closestEnem = -1;
+                let closestDist = 9999999999;
+                for(let i = 0;i < CUG.enemies.length;i++){
+                    let ddist = Math.hypot(entity.x-CUG.enemies[i].x, entity.y-CUG.enemies[i].y);
+
+                    if(ddist < closestDist && CUG.enemies[i].seedlists.length < CUG.enemies[i].maxCapacity){
+                        closestEnem = i;
+                        closestDist = ddist;
                     }
                 }
 
@@ -189,11 +209,50 @@ function updateEntities(){
                         entity.x += dx * (speed * 0.5) * deltaTime;
                         entity.y += dy * (speed * 0.5) * deltaTime;
                     }
+
+                    // Attach to enemy instead it is closest 
+                    if( closestEnem > -1 ){
+                        entity.mode = 2;// set tp agro
+                        entity.targetEntity = CUG.enemies[closestEnem];
+                        CUG.enemies[closestEnem].seedlists.push(entity);
+                    }
                 }
 
 
             }
-        }  
+            
+            // Seedling is aggro'd on something
+            else if( entity.mode === 2 ){
+                
+                let speed = 300;
+
+                // Direct chase toward the player
+                let dx = (entity.targetEntity.x) - entity.x;
+                let dy = (entity.targetEntity.y) - entity.y;
+
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                    dx /= dist;
+                    dy /= dist;
+                    entity.x += dx * (speed * 0.5) * deltaTime;
+                    entity.y += dy * (speed * 0.5) * deltaTime;
+                }
+            }
+            
+        }
+
+        //End of update pass
+    }
+
+
+    
+    // if health is 0 or smaller, remove it i guess?
+    for(let j = CUG.entities.length-1;j > -1;j--){
+        let entity = CUG.entities[j];
+        if( entity.health <= 0 ){
+
+        }
+
     }
 }
 
@@ -209,7 +268,7 @@ function renderAllEntities(){
             ctx.fill();
         } 
         else if (entity.type === ENTITY_SEEDLING) {
-            let ssze = 12;// size of a seedlg
+            let ssze = 17;// size of a seedlg
             // Green Triangle
             ctx.fillStyle = 'green';
             ctx.beginPath();
@@ -261,10 +320,11 @@ function resetGame( configger ){
     CUG.seed = ''+configger.startingSeed;
     CUG.entities = [];
     CUG.step = 0;
+    CUG.enemies = [];// list of all the running entities
 
     player = spawnPlayer( 0, 0);
 
-    CUG.entities.push(player); 
+    CUG.entities.push(player);
 }
 
 
@@ -327,6 +387,7 @@ function update(){//deltaTime) {
         if( eventType < 0.2 ){
             let enemy = spawnEnemy(player.x, player.y);
             CUG.entities.push(enemy);
+            CUG.enemies.push(enemy);
             lastEnemySpawnTime = Date.now();
         }
         // ---- Spawn seedling --- 
