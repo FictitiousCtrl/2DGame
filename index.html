@@ -105,6 +105,8 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
+    var deltaTime = 16 / 1000;
+
     // Resize the canvas to fill the browser window
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -117,6 +119,8 @@
     let lastTime = 0;
     let keys = {};
     let lastInputTime = Date.now();
+
+
     
     // Camera (smooth follow)
     const camera = {
@@ -242,10 +246,10 @@
     // Main game loop using requestAnimationFrame
     function gameLoop(timestamp) {
       if (!lastTime) lastTime = timestamp;
-      const deltaTime = (timestamp - lastTime) / 1000;
+      //const deltaTime = (timestamp - lastTime) / 1000;
       lastTime = timestamp;
       
-      update(deltaTime);
+      update();//deltaTime);
       render();
       
       requestAnimationFrame(gameLoop);

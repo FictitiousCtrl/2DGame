@@ -7,7 +7,7 @@ const path = require('path');
 // Define the paths for the files
 const hostFilePath = path.resolve(__dirname, 'src/start.js');
 const outputFilePath = path.resolve(__dirname, 'build/built.js');
- 
+
 //const file3Path = path.resolve(__dirname, 'file3.js'); // Optional file
 
 try {

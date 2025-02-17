@@ -5,6 +5,7 @@
 var CUG = {
     seed: '',
     entities: [],
+    step: 0
 };
 var player = null;
 
@@ -17,21 +18,9 @@ var player = null;
 function resetGame( configger ){
     CUG.seed = ''+configger.startingSeed;
     CUG.entities = [];
+    CUG.step = 0;
 
-    
-    // The player entity (first in the entities array)
-    player = getNewEntity(
-        0,
-        0,
-        100,
-        ENTITY_PLAYER,
-        0,
-        // spriteFrames is an array of base64 strings for each frame
-        [
-            // Add your base64 player sprite strings here, for example:
-            // 'data:image/png;base64,INSERT_BASE64_STRING_HERE'
-        ]
-    );
+    player = spawnPlayer( 0, 0);
 
     CUG.entities.push(player); 
 }
@@ -41,7 +30,7 @@ function resetGame( configger ){
 /**********************
  * GAME UPDATE & RENDER
  **********************/
-function update(deltaTime) {
+function update(){//deltaTime) {
     // ---- Player movement ----
     let moveX = 0, moveY = 0;
     const speed = 200; // pixels per second
@@ -85,28 +74,26 @@ function update(deltaTime) {
     camera.x += (player.x - camera.x) * camera.smoothSpeed;
     camera.y += (player.y - camera.y) * camera.smoothSpeed;
 
-    // ---- Update enemy entities ----
-    for (let entity of CUG.entities) {
-        if (entity.type === ENTITY_ENEMY) {
-            // Direct chase toward the player
-            let dx = player.x - entity.x;
-            let dy = player.y - entity.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist > 0) {
-                dx /= dist;
-                dy /= dist;
-                entity.x += dx * (speed * 0.5) * deltaTime;
-                entity.y += dy * (speed * 0.5) * deltaTime;
-            }
-        }  
-    }
+    updateEntities();
 
-    // ---- Spawn Enemies ----
+    // Event Type
     if (Date.now() - lastEnemySpawnTime > enemySpawnInterval) {
-        console.log('goin at', player.x, player.y)
-        let enemy = spawnEnemy(player.x, player.y);
-        CUG.entities.push(enemy);
-        lastEnemySpawnTime = Date.now();
+
+        let eventType = Math.random();
+
+        // ---- Spawn enemy ----
+        if( eventType < 0.2 ){
+            let enemy = spawnEnemy(player.x, player.y);
+            CUG.entities.push(enemy);
+            lastEnemySpawnTime = Date.now();
+        }
+        // ---- Spawn seedling --- 
+        else{
+            let sedling = spawnSeedling(player.x, player.y);
+            CUG.entities.push(sedling);
+            lastEnemySpawnTime = Date.now();
+        }
+
     }
 
     // ---- Powerup Popup Logic ----
@@ -114,6 +101,8 @@ function update(deltaTime) {
         showPowerupPopup();
         lastPowerupTime = Date.now();
     }
+
+    CUG.step += 1;
 
     // ---- UI Inactivity Check ----
     checkUIInactivity();
@@ -128,22 +117,8 @@ function render() {
     ctx.save();
     ctx.translate(canvas.width / 2 - camera.x, canvas.height / 2 - camera.y);
 
-    // Render all entities
-    CUG.entities.forEach(entity => {
-        if (entity.type === ENTITY_PLAYER) {
-            ctx.fillStyle = 'blue';
-            ctx.beginPath();
-            ctx.arc(entity.x, entity.y, 20, 0, Math.PI * 2);
-            ctx.fill();
-        } 
-        else {
-            // Enemies: red for chasers, orange for spiral types
-            ctx.fillStyle =  'red';
-            ctx.beginPath();
-            ctx.arc(entity.x, entity.y, 15, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    });
+    renderAllEntities();
+
     ctx.restore();
 
     // ---- Draw the Trackpad Graphic ----
