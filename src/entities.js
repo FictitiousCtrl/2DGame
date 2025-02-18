@@ -11,13 +11,19 @@ const ENTITY_SEEDLING = 3;
 //     { label: "ENEMY", val: 2},
 //     { label: "SEEDLING", val: 3},
 // ];
+
     // have the seedlings break off to do stuff 
-    // traps u can run into and hurt 
-    // multipliers u can hit 
     // defensive seedlings, 
+
+    // Expldr
+
+
+    // multipliers u can hit 
+    // traps u can run into and hurt
+
     // rando generator for ost
 
-    // tool for color picking the wallls!!!
+    // 
 
 function calculateSpiralCoordinates(index, radius) {
     // The golden angle in radians

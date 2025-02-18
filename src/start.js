@@ -8,6 +8,7 @@ var CUG = {
     step: 0,
     enemies: [],
     idtracker: 0,
+    paused: false,
 };
 var player = null;
 
@@ -23,6 +24,7 @@ function resetGame( configger ){
     CUG.step = 0;
     CUG.enemies = [];// list of all the running entities
     CUG.idtracker = 0;
+    CUG.paused = false;
 
     player = spawnPlayer( 0, 0);
 
@@ -35,85 +37,88 @@ function resetGame( configger ){
  * GAME UPDATE & RENDER
  **********************/
 function update(){//deltaTime) {
-    // ---- Player movement ----
-    let moveX = 0, moveY = 0;
-    const speed = 20; // pixels per second
 
-    // Keyboard input (arrow keys / WASD)
-    if (keys['ArrowUp'] || keys['w'])    moveY -= 1;
-    if (keys['ArrowDown'] || keys['s'])    moveY += 1;
-    if (keys['ArrowLeft'] || keys['a'])    moveX -= 1;
-    if (keys['ArrowRight'] || keys['d'])   moveX += 1;
+    if(!CUG.paused){
+        // ---- Player movement ----
+        let moveX = 0, moveY = 0;
+        const speed = 20; // pixels per second
 
-    // Normalize the vector if needed
-    if (moveX !== 0 || moveY !== 0) {
-        const len = Math.hypot(moveX, moveY);
-        moveX /= len;
-        moveY /= len;
-    }
+        // Keyboard input (arrow keys / WASD)
+        if (keys['ArrowUp'] || keys['w'])    moveY -= 1;
+        if (keys['ArrowDown'] || keys['s'])    moveY += 1;
+        if (keys['ArrowLeft'] || keys['a'])    moveX -= 1;
+        if (keys['ArrowRight'] || keys['d'])   moveX += 1;
 
-    // Trackpad drag adds to movement direction
-    if (trackpad.active) {
-        let dx = trackpad.currentX - trackpad.startX;
-        let dy = trackpad.currentY - trackpad.startY;
-        const len = Math.hypot(dx, dy);
-        if (len > 0) {
-            dx /= len;
-            dy /= len;
-            moveX += dx;
-            moveY += dy;
-            const total = Math.hypot(moveX, moveY);
-            if (total > 0) {
-                moveX /= total;
-                moveY /= total;
+        // Normalize the vector if needed
+        if (moveX !== 0 || moveY !== 0) {
+            const len = Math.hypot(moveX, moveY);
+            moveX /= len;
+            moveY /= len;
+        }
+
+        // Trackpad drag adds to movement direction
+        if (trackpad.active) {
+            let dx = trackpad.currentX - trackpad.startX;
+            let dy = trackpad.currentY - trackpad.startY;
+            const len = Math.hypot(dx, dy);
+            if (len > 0) {
+                dx /= len;
+                dy /= len;
+                moveX += dx;
+                moveY += dy;
+                const total = Math.hypot(moveX, moveY);
+                if (total > 0) {
+                    moveX /= total;
+                    moveY /= total;
+                }
             }
         }
-    }
 
-    // Update player position
-    player.vx += moveX * speed * deltaTime;
-    player.vy += moveY * speed * deltaTime;
+        // Update player position
+        player.vx += moveX * speed * deltaTime;
+        player.vy += moveY * speed * deltaTime;
 
-    player.vx *= 0.93;
-    player.vy *= 0.93;
+        player.vx *= 0.93;
+        player.vy *= 0.93;
 
-    player.x += player.vx;
-    player.y += player.vy;
+        player.x += player.vx;
+        player.y += player.vy;
 
-    // ---- Camera smooth follow ----
-    camera.x += (player.x - camera.x) * camera.smoothSpeed;
-    camera.y += (player.y - camera.y) * camera.smoothSpeed;
+        // ---- Camera smooth follow ----
+        camera.x += (player.x - camera.x) * camera.smoothSpeed;
+        camera.y += (player.y - camera.y) * camera.smoothSpeed;
 
-    updateEntities();
+        updateEntities();
 
-    // Event Type
-    if (Date.now() - lastEnemySpawnTime > enemySpawnInterval) {
+        // Event Type
+        if (Date.now() - lastEnemySpawnTime > enemySpawnInterval) {
 
-        let eventType = Math.random();
+            let eventType = Math.random();
 
-        // ---- Spawn enemy ----
-        if( eventType < 0.2 ){
-            let enemy = spawnEnemy(player.x, player.y);
-            CUG.entities.push(enemy);
-            CUG.enemies.push(enemy);
-            lastEnemySpawnTime = Date.now();
+            // ---- Spawn enemy ----
+            if( eventType < 0.2 ){
+                let enemy = spawnEnemy(player.x, player.y);
+                CUG.entities.push(enemy);
+                CUG.enemies.push(enemy);
+                lastEnemySpawnTime = Date.now();
+            }
+            // ---- Spawn seedling --- 
+            else{
+                let sedling = spawnSeedling(player.x, player.y);
+                CUG.entities.push(sedling);
+                lastEnemySpawnTime = Date.now();
+            }
+
         }
-        // ---- Spawn seedling --- 
-        else{
-            let sedling = spawnSeedling(player.x, player.y);
-            CUG.entities.push(sedling);
-            lastEnemySpawnTime = Date.now();
+
+        // ---- Powerup Popup Logic ----
+        if (Date.now() - lastPowerupTime > powerupInterval) {
+            showPowerupPopup();
+            lastPowerupTime = Date.now();
         }
 
+        CUG.step += 1;
     }
-
-    // ---- Powerup Popup Logic ----
-    if (Date.now() - lastPowerupTime > powerupInterval) {
-        showPowerupPopup();
-        lastPowerupTime = Date.now();
-    }
-
-    CUG.step += 1;
 
     // ---- UI Inactivity Check ----
     checkUIInactivity();
