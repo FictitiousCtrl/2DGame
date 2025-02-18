@@ -125,6 +125,9 @@
      **********************/
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+
+    const background = new Image();
+    background.src = 'assets/backgrounds/biome_one_sublevel_6.png'; // Ensure this file exists
     
     var deltaTime = 16 / 1000;
 
@@ -133,6 +136,7 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
+    
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
     

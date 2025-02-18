@@ -638,10 +638,12 @@ function update(){//deltaTime) {
 function render() {
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Save and apply camera transform so player stays centered
     ctx.save();
     ctx.translate(canvas.width / 2 - camera.x, canvas.height / 2 - camera.y);
+    ctx.drawImage(background, 0, 0, 2048, 2048);
 
     renderAllEntities();
 
