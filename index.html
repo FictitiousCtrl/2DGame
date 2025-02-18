@@ -17,6 +17,25 @@
     canvas {
       display: block;
       background: #222;
+    } 
+    .hidden{
+        transition: all 1s ease-in-out !important;
+        opacity:0;
+        max-height:0;
+        max-width:0;
+        display:none;
+        padding:0 !important;
+        margin:0 !important;
+        border:none !important;
+        overflow:hidden;
+    }
+    .disable-selectt {
+        user-select: none; /* supported by Chrome and Opera */
+        -webkit-user-select: none; /* Safari */
+        -khtml-user-select: none; /* Konqueror HTML */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        -webkit-user-drag: none;
     }
     /* UI Buttons (four corners) */
     .ui-button {
@@ -77,7 +96,9 @@
       transform: scale(1.1);
     }
   </style>
+  <script src="build/sounds64.js"></script>
   <script src="build/built.js"></script>
+  <script src="src/sfxcontrol.js"></script>
 </head>
 <body>
   <!-- Main game canvas -->

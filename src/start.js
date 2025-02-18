@@ -6,7 +6,8 @@ var CUG = {
     seed: '',
     entities: [],
     step: 0,
-    enemies: []
+    enemies: [],
+    idtracker: 0,
 };
 var player = null;
 
@@ -21,6 +22,7 @@ function resetGame( configger ){
     CUG.entities = [];
     CUG.step = 0;
     CUG.enemies = [];// list of all the running entities
+    CUG.idtracker = 0;
 
     player = spawnPlayer( 0, 0);
 
