@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>2D Canvas Game</title>
-  <style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>2D Canvas Game</title>
+    <style>
     /* Reset and basic styles for mobile: no margins, no scroll bars, no selection */
     html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
     }
     canvas {
-      display: block;
-      background: #222;
+        display: block;
+        background: #222;
     } 
     .hidden{
         transition: all 1s ease-in-out !important;
@@ -39,16 +39,16 @@
     }
     /* UI Buttons (four corners) */
     .ui-button {
-      position: absolute;
-      width: 80px;
-      height: 80px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid #fff;
-      border-radius: 10px;
-      pointer-events: auto;
-      user-select: none;
-      opacity: 0;
-      transition: opacity 0.5s;
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid #fff;
+        border-radius: 10px;
+        pointer-events: auto;
+        user-select: none;
+        opacity: 0;
+        transition: opacity 0.5s;
     }
     #btn-top-left    { top: 10px; left: 10px; }
     #btn-top-right   { top: 10px; right: 10px; }
@@ -56,70 +56,70 @@
     #btn-bottom-right{ bottom: 10px; right: 10px; }
     /* Powerup Popup */
     #powerup-popup {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      opacity: 0;
-      transition: opacity 0.5s;
-      pointer-events: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.5s;
+        pointer-events: none;
     }
     #powerup-popup.active {
-      opacity: 1;
-      pointer-events: auto;
+        opacity: 1;
+        pointer-events: auto;
     }
     #powerup-container {
-      background: #333;
-      padding: 20px;
-      border-radius: 10px;
-      display: flex;
-      gap: 20px;
+        background: #333;
+        padding: 20px;
+        border-radius: 10px;
+        display: flex;
+        gap: 20px;
     }
     .powerup {
-      width: 100px;
-      height: 100px;
-      background: #555;
-      border: 2px solid #fff;
-      border-radius: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      transition: transform 0.3s;
+        width: 100px;
+        height: 100px;
+        background: #555;
+        border: 2px solid #fff;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.3s;
     }
     .powerup:hover {
-      transform: scale(1.1);
+        transform: scale(1.1);
     }
-  </style>
-  <script src="build/sounds64.js"></script>
-  <script src="build/built.js"></script>
-  <script src="src/sfxcontrol.js"></script>
+    </style>
+    <script src="build/sounds64.js"></script>
+    <script src="build/built.js"></script>
+    <script src="src/sfxcontrol.js"></script>
 </head>
 <body>
-  <!-- Main game canvas -->
-  <canvas id="gameCanvas"></canvas>
-  
-  <!-- UI Buttons overlay (they fade in after inactivity) -->
-  <div id="btn-top-left" onclick="togglePause()" class="ui-button">[PAUSE]</div>
-  <div id="btn-top-right" class="ui-button">TR</div>
-  <div id="btn-bottom-left" class="ui-button">BL</div>
-  <div id="btn-bottom-right" class="ui-button">BR</div>
-  
-  <!-- Powerup popup overlay (appears every 45 seconds) -->
-  <div id="powerup-popup">
+    <!-- Main game canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Buttons overlay (they fade in after inactivity) -->
+    <div id="btn-top-left" onclick="togglePause()" class="ui-button">[PAUSE]</div>
+    <div id="btn-top-right" class="ui-button">TR</div>
+    <div id="btn-bottom-left" class="ui-button">BL</div>
+    <div id="btn-bottom-right" class="ui-button">BR</div>
+
+    <!-- Powerup popup overlay (appears every 45 seconds) -->
+    <div id="powerup-popup">
     <div id="powerup-container">
-      <div class="powerup" data-power="power1">Power 1</div>
-      <div class="powerup" data-power="power2">Power 2</div>
-      <div class="powerup" data-power="power3">Power 3</div>
+        <div class="powerup" data-power="power1">Power 1</div>
+        <div class="powerup" data-power="power2">Power 2</div>
+        <div class="powerup" data-power="power3">Power 3</div>
     </div>
-  </div>
-  
-  <script>
+    </div>
+
+    <script>
     /**********************
      * SETUP AND UTILITIES
      **********************/
@@ -128,13 +128,34 @@
 
     const background = new Image();
     background.src = 'assets/backgrounds/biome_one_sublevel_6.png'; // Ensure this file exists
-    
+
+    var ALL_IMAGES = {};
+
     var deltaTime = 16 / 1000;
 
     // Resize the canvas to fill the browser window
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    // async function loadImageSync(url) {
+    //     const response = await fetch(url);
+    //     const blob = await response.blob();
+    //     return new Promise((resolve) => {
+    //         const img = new Image();
+    //         img.src = URL.createObjectURL(blob);
+    //         img.onload = () => resolve(img);
+    //     });
+    // }
+
+    function loadImageSync(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("Failed to load image: " + url));
+        });
     }
     
     window.addEventListener('resize', resizeCanvas);
@@ -149,9 +170,9 @@
     
     // Camera (smooth follow)
     const camera = {
-      x: 0,
-      y: 0,
-      smoothSpeed: 0.1
+        x: 0,
+        y: 0,
+        smoothSpeed: 0.1
     };
     
     
@@ -161,47 +182,47 @@
      **********************/
     // Keyboard input (arrow keys / WASD)
     window.addEventListener('keydown', e => {
-      keys[e.key] = true;
-      lastInputTime = Date.now();
-      hideUIButtons();
+        keys[e.key] = true;
+        lastInputTime = Date.now();
+        hideUIButtons();
     });
     window.addEventListener('keyup', e => {
-      keys[e.key] = false;
+        keys[e.key] = false;
     });
     
     // Trackpad input for mobile (mouse and touch)
     const trackpad = {
-      active: false,
-      startX: 0,
-      startY: 0,
-      currentX: 0,
-      currentY: 0,
-      opacity: 0,
-      fadeTimer: null
+        active: false,
+        startX: 0,
+        startY: 0,
+        currentX: 0,
+        currentY: 0,
+        opacity: 0,
+        fadeTimer: null
     };
     
     function startTrackpad(e) {
-      trackpad.active = true;
-      trackpad.startX = e.clientX;
-      trackpad.startY = e.clientY;
-      trackpad.currentX = e.clientX;
-      trackpad.currentY = e.clientY;
-      trackpad.opacity = 1;
-      lastInputTime = Date.now();
-      hideUIButtons();
-      if (trackpad.fadeTimer) clearTimeout(trackpad.fadeTimer);
+        trackpad.active = true;
+        trackpad.startX = e.clientX;
+        trackpad.startY = e.clientY;
+        trackpad.currentX = e.clientX;
+        trackpad.currentY = e.clientY;
+        trackpad.opacity = 1;
+        lastInputTime = Date.now();
+        hideUIButtons();
+        if (trackpad.fadeTimer) clearTimeout(trackpad.fadeTimer);
     }
     function moveTrackpad(e) {
-      if (!trackpad.active) return;
-      trackpad.currentX = e.clientX;
-      trackpad.currentY = e.clientY;
-      lastInputTime = Date.now();
-      hideUIButtons();
+        if (!trackpad.active) return;
+        trackpad.currentX = e.clientX;
+        trackpad.currentY = e.clientY;
+        lastInputTime = Date.now();
+        hideUIButtons();
     }
     function endTrackpad() {
-      trackpad.active = false;
-      // Fade out the trackpad graphic after a short delay
-      trackpad.fadeTimer = setTimeout(() => { trackpad.opacity = 0; }, 500);
+        trackpad.active = false;
+        // Fade out the trackpad graphic after a short delay
+        trackpad.fadeTimer = setTimeout(() => { trackpad.opacity = 0; }, 500);
     }
     
     // Mouse events
@@ -211,37 +232,37 @@
     
     // Touch events (prevent default to avoid scrolling)
     canvas.addEventListener('touchstart', e => {
-      e.preventDefault();
-      startTrackpad(e.touches[0]);
+        e.preventDefault();
+        startTrackpad(e.touches[0]);
     }, {passive: false});
     canvas.addEventListener('touchmove', e => {
-      e.preventDefault();
-      moveTrackpad(e.touches[0]);
+        e.preventDefault();
+        moveTrackpad(e.touches[0]);
     }, {passive: false});
     canvas.addEventListener('touchend', e => {
-      e.preventDefault();
-      endTrackpad();
+        e.preventDefault();
+        endTrackpad();
     });
     
     /**********************
      * UI BUTTONS MANAGEMENT
      **********************/
     const uiButtons = document.querySelectorAll('.ui-button');
-    function showUIButtons() {
-      uiButtons.forEach(btn => {
-        btn.style.opacity = 1;
-      });
+        function showUIButtons() {
+        uiButtons.forEach(btn => {
+            btn.style.opacity = 1;
+        });
     }
     function hideUIButtons() {
-      uiButtons.forEach(btn => {
-        btn.style.opacity = 0;
-      });
+        uiButtons.forEach(btn => {
+            btn.style.opacity = 0;
+        });
     }
     // Check for inactivity and fade in UI buttons after ~1.5 seconds
     function checkUIInactivity() {
-      if (Date.now() - lastInputTime > 1500) {
-        showUIButtons();
-      }
+        if (Date.now() - lastInputTime > 1500) {
+            showUIButtons();
+        }
     }
 
     function togglePause(){
@@ -257,38 +278,44 @@
     let lastPowerupTime = Date.now();
     
     function showPowerupPopup() {
-      powerupPopup.classList.add('active');
-      // You might pause game logic here if desired.
+        powerupPopup.classList.add('active');
+        // You might pause game logic here if desired.
     }
     // When a powerup is clicked, apply its effect and fade out the popup
     powerupElements.forEach(elem => {
-      elem.addEventListener('click', () => {
-        console.log('Powerup selected:', elem.dataset.power);
-        powerupPopup.classList.remove('active');
-      });
+        elem.addEventListener('click', () => {
+            console.log('Powerup selected:', elem.dataset.power);
+            powerupPopup.classList.remove('active');
+        });
     });
     
     
     
     
+    // Immediately execute the function and start animation
+    (async () => {
+        ALL_IMAGES.seedling =   await loadImageSync("assets/sprites/seedling/seedling.png");
+        
+        resetGame({startingSeed: 'testest1234'});
+
+        //console.log(player);
+
+        requestAnimationFrame(gameLoop);
+    })();
+
     
     // Main game loop using requestAnimationFrame
     function gameLoop(timestamp) {
-      if (!lastTime) lastTime = timestamp;
-      //const deltaTime = (timestamp - lastTime) / 1000;
-      lastTime = timestamp;
-      
-      update();//deltaTime);
-      render();
-      
-      requestAnimationFrame(gameLoop);
+        if (!lastTime) lastTime = timestamp;
+        //const deltaTime = (timestamp - lastTime) / 1000;
+        lastTime = timestamp;
+
+        update();//deltaTime);
+        render();
+
+        requestAnimationFrame(gameLoop);
     }
 
-    resetGame({startingSeed: 'testest1234'});
-
-    console.log(player);
-
-    requestAnimationFrame(gameLoop);
     
   </script>
 </body>

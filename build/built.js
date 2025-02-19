@@ -114,6 +114,8 @@ function getNewEntity( xx, yy, healt, type, sprites ){
 
     nuent.hurtSince = 1; // if 0 it was just hurt, and then slowly move it like 5% towards 1.0
 
+    nuent.horFlip = 0; // value between 0 ( facing perfectly right,) and 1 (facing perfeclty left)
+
     nuent.targetEntity = null;
 
     nuent.spriteIndex = 0;
@@ -482,11 +484,72 @@ function renderAllEntities(){
             ctx.lineTo(entity.x + ssze, entity.y + ssze);
             ctx.closePath();
             ctx.fill();
+
+            // Flip horiziontal values
+            if(entity.vx < 0 && Math.abs(entity.vx) > 0.6 ){
+                entity.horFlip += (1 - entity.horFlip) * 0.1;
+            }
+            else{
+                entity.horFlip += (0 - entity.horFlip) * 0.1;
+            }
+
+            // speed magnitude
+            let speeMag = Math.hypot( entity.vx, entity.vy );
+
+
+            // Apply squash/stretch effect
+            // let scaleX = 1 + Math.sin(time * 0.2) * 0.2; // Horizontal stretch
+            // let scaleY = 1 - Math.sin(time * 0.2) * 0.2; // Vertical squash
+            // ctx.scale(scaleX, scaleY);
+            let wx = 160;
+            wx /= 4;
+            let wy = 192;
+            wy /= 4;
+
+            let sqush = 7 * ( Math.sin(CUG.step/8 +(entity.offr)) );
+
+            let totalwy = wy + sqush;
+              
+
+
+            let flipProgress = entity.horFlip; // Between 0 and 1
+
+
+
+            // Calculate the width dynamically based on flip progress
+            let scaledWidth = wx * Math.abs(1 - 2 * flipProgress);
+            let flipDirection = flipProgress >= 0.5 ? -1 : 1;
+
+            let xOffs = flipDirection < 0 ? -wx : 0;
+
+            ctx.save();
+            ctx.translate(entity.x, entity.y + totalwy / 2);
+
+            // Apply horizontal flipping based on the flip progress
+            ctx.scale(flipDirection, 1);
+            
+            ctx.drawImage(
+                ALL_IMAGES.seedling, 
+                (-scaledWidth / 2) * flipDirection + xOffs, // Adjust x based on flipping
+                -wy / 2, // Keep the vertical position centered
+                scaledWidth, 
+                totalwy
+            );
+
+            ctx.restore();
+             
         } 
         else if (entity.type === ENTITY_ENEMY) {
+
+            
             let hurtFactor = Math.max(0, Math.min(1, entity.hurtSince));
             let baseColor = { r: 139, g: 0, b: 0 }; // Dark red (hurt)
             let hurtColor = { r: 255, g: 0, b: 0 }; // Bright red
+
+            // Just lidling
+            if( entity.mode === 0 ){
+                hurtColor = { r: 255, g: 200, b: 200 };
+            }
         
             let r = Math.round(baseColor.r + (hurtColor.r - baseColor.r) * hurtFactor);
             let g = Math.round(baseColor.g + (hurtColor.g - baseColor.g) * hurtFactor);
@@ -641,13 +704,14 @@ function render() {
     //ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Save and apply camera transform so player stays centered
-    ctx.save();
     ctx.translate(canvas.width / 2 - camera.x, canvas.height / 2 - camera.y);
     ctx.drawImage(background, 0, 0, 2048, 2048);
 
     renderAllEntities();
 
-    ctx.restore();
+    // Reverse the translation manually
+    ctx.translate(-(canvas.width / 2 - camera.x), -(canvas.height / 2 - camera.y));
+
 
     // ---- Draw the Trackpad Graphic ----
     if (trackpad.opacity > 0) {
