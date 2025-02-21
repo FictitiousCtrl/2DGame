@@ -116,12 +116,16 @@ function getNewEntity( xx, yy, healt, type, sprites ){
 
     nuent.horFlip = 0; // value between 0 ( facing perfectly right,) and 1 (facing perfeclty left)
 
-    nuent.targetEntity = null;
+    nuent.targetEntity = null; // i think just used for seedling
 
     nuent.spriteIndex = 0;
     nuent.spriteFrames = sprites;
 
     return nuent;
+}
+
+function setSeedlingToJoinLeader(){
+
 }
 
 // Function to spawn a new enemy entity
@@ -152,7 +156,7 @@ function spawnEnemy(xxx, yyy ) {
     let enemy = getNewEntity(
         xxx + (Math.random() - 0.5) * 800,
         yyy + (Math.random() - 0.5) * 800,
-        100,
+        34,
         // Randomly choose an enemy type
         ENTITY_ENEMY,
         [
@@ -226,6 +230,7 @@ function updateEntities(){
                     entity.vy += dy * (speed * 0.5) * deltaTime;
                 }
 
+                // Attached seedlist entities pull on the enemy itself
                 for(let i = 0;i < entity.seedlists.length;i++){
                     
                     let frcs = springForce( entity.seedlists[i].x, entity.seedlists[i].y,
@@ -410,10 +415,14 @@ function updateEntities(){
     for(let j = CUG.entities.length-1;j > -1;j--){
 
         let entity = CUG.entities[j];
+
+
+        // DEATH CODE ---------------------
+        // CODE TO RUN WHEN DEATH
+
         if( entity.health <= 0 ){
 
-
-            // if you have a target entity, that means you are in their list?
+            // if you have a target entity, that means you are in their list
             if( entity.targetEntity){
                 for(let g = entity.targetEntity.seedlists.length-1;g > -1;g--){
                     if(entity.targetEntity.seedlists[g] === entity){
@@ -422,21 +431,36 @@ function updateEntities(){
                 }
             }
 
-            // if you have a seedlists
-            for(let g = entity.seedlists.length-1;g > -1;g--){
-                
-                entity.seedlists[g].targetEntity = null;
+            // if the dead entity is an emeny
+            if( entity.type === ENTITY_ENEMY ){
 
-                // target entity
-                if( entity.targetEntity ){
-                    entity.targetEntity.seedlists.splice( g, 1 );
+                // release seedlings from enemy list in an explost vi eway
+                for(let g = entity.seedlists.length-1;g > -1;g--){
 
-                    if(entity.targetEntity.seedlists[g].type === ENTITY_SEEDLING){
-                        entity.targetEntity.seedlists[g].mode = 0;
-                    }
+                    entity.seedlists[g].targetEntity = null;
+
+                    if(entity.seedlists[g].type === ENTITY_SEEDLING){
+
+                        playAudio("balop")
+
+                        // set to idle?
+                        //entity.targetEntity.seedlists[g].mode = 0;
+
+                        // set to go back to player wiht a little push off
+                        entity.seedlists[g].mode = 1;// captured now as a follower back to the player
+                        player.seedlists.push( entity.seedlists[g] );
+                        let anglePushBack = Math.atan2( 
+                            entity.y-entity.seedlists[g].y,
+                            entity.x-entity.seedlists[g].x
+                        );
+                        entity.seedlists[g].vx += 15*Math.cos(anglePushBack);
+                        entity.seedlists[g].vy += 15*Math.sin(anglePushBack);
+                    } 
                 }
             }
+            
 
+            // Finally remove from the 
             CUG.entities.splice( j, 1 );
             if(entity.type === ENTITY_ENEMY){
                 
