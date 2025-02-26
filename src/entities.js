@@ -425,7 +425,7 @@ function updateEntities(){
 
                     if(entity.seedlists[g].type === ENTITY_SEEDLING){
 
-                        playAudio("balop")
+                        playAudio("balop");
 
                         // set to idle?
                         //entity.targetEntity.seedlists[g].mode = 0;

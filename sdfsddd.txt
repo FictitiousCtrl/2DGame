@@ -1,0 +1,16 @@
+power ups:
+	big boss seedlings 
+	(offensive seedlings)
+	(defensive seedlings)
+	tackler seedlings
+	explosive seedlers
+	
+enemies: 
+	jewlings
+	gold pile
+	meanlings (1 health)
+	
+
+environement:
+	2x multipliers
+	-2 thorn bushes

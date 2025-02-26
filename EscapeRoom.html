@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Escape Room Game</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #game {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background-color: #333;
+            border: 2px solid #666;
+        }
+        .object {
+            position: absolute;
+            cursor: pointer; /* Hand cursor for point-and-click */
+        }
+        #painting {
+            left: 100px;
+            top: 50px;
+            width: 200px;
+            height: 150px;
+            background-color: #ccc;
+        }
+        #book {
+            left: 400px;
+            top: 300px;
+            width: 50px;
+            height: 80px;
+            background-color: #8B4513;
+        }
+        #dark_corner {
+            left: 600px;
+            top: 400px;
+            width: 100px;
+            height: 100px;
+            background-color: #111;
+        }
+        #door {
+            left: 700px;
+            top: 100px;
+            width: 80px;
+            height: 200px;
+            background-color: #964B00;
+        }
+        #safe {
+            left: 600px;
+            top: 400px;
+            width: 100px;
+            height: 100px;
+            background-color: #555;
+            display: none; /* Initially hidden */
+        }
+        #calendar {
+            left: 200px;
+            top: 200px;
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+            border: 1px solid #000;
+        }
+        #toolbar {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+        }
+        #toolbar button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #message, #input_div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border: 1px solid #000;
+            z-index: 10;
+            display: none;
+            color: #000;
+            text-align: center;
+        }
+        #input_div input, #input_div button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="painting" class="object"></div>
+        <div id="book" class="object"></div>
+        <div id="dark_corner" class="object"></div>
+        <div id="door" class="object"></div>
+        <div id="safe" class="object"></div>
+        <div id="calendar" class="object"></div>
+        <div id="toolbar">
+            <button id="hand">Hand</button>
+            <button id="magnifying_glass">Magnifying Glass</button>
+            <button id="flashlight">Flashlight</button>
+            <button id="blue_light">Blue Light</button>
+        </div>
+        <div id="message"></div>
+        <div id="input_div">
+            <p>Enter the 3-digit code:</p>
+            <input type="text" id="code_input" maxlength="3">
+            <button id="submit_code">Submit</button>
+            <p id="input_message"></p>
+        </div>
+    </div>
+    <script>
+        let currentTool = 'hand';
+        let hasKey = false;
+
+        // Tool selection
+        document.getElementById('hand').addEventListener('click', () => currentTool = 'hand');
+        document.getElementById('magnifying_glass').addEventListener('click', () => currentTool = 'magnifying_glass');
+        document.getElementById('flashlight').addEventListener('click', () => currentTool = 'flashlight');
+        document.getElementById('blue_light').addEventListener('click', () => currentTool = 'blue_light');
+
+        // Object interactions
+        const objectInteractions = {
+            painting: {
+                hand: "It's a dusty old painting.",
+                magnifying_glass: "You see a faint '3' in the corner.",
+                flashlight: "The painting remains unchanged.",
+                blue_light: "No hidden messages appear."
+            },
+            book: {
+                hand: "An old leather-bound book.",
+                magnifying_glass: "The text is too small to read.",
+                flashlight: "The book is clearly visible.",
+                blue_light: "A hidden message glows: 'Second number is 7'."
+            },
+            dark_corner: {
+                hand: "It's pitch black.",
+                magnifying_glass: "Too dark to see details.",
+                flashlight: "A safe is revealed in the light!",
+                blue_light: "The darkness hides any secrets."
+            },
+            door: {
+                hand: "The door is locked. You need a key.",
+                magnifying_glass: "The lock looks sturdy.",
+                flashlight: "The door is already visible.",
+                blue_light: "No hidden text on the door."
+            },
+            safe: {
+                hand: "A safe with a combination lock.",
+                magnifying_glass: "The dial shows wear.",
+                flashlight: "The safe is illuminated.",
+                blue_light: "No hidden text appears."
+            },
+            calendar: {
+                hand: "A faded calendar from 1900.",
+                magnifying_glass: "The number '2' is circled.",
+                flashlight: "The calendar is visible.",
+                blue_light: "No hidden messages here."
+            }
+        };
+
+        // Click handler for objects
+        document.querySelectorAll('.object').forEach(obj => {
+            obj.addEventListener('click', () => {
+                const id = obj.id;
+                if (id === 'door' && currentTool === 'hand' && hasKey) {
+                    showMessage("You unlock the door and escape! You win!");
+                    // Game ends here; further interactions could be disabled
+                } else if (id === 'safe' && currentTool === 'hand') {
+                    showInputDiv();
+                } else if (objectInteractions[id] && objectInteractions[id][currentTool]) {
+                    showMessage(objectInteractions[id][currentTool]);
+                    if (id === 'dark_corner' && currentTool === 'flashlight') {
+                        document.getElementById('safe').style.display = 'block';
+                    }
+                } else {
+                    showMessage("Nothing happens.");
+                }
+            });
+        });
+
+        // Show message function
+        function showMessage(text) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerText = text;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Show input div for safe code
+        function showInputDiv() {
+            document.getElementById('message').style.display = 'none';
+            document.getElementById('input_div').style.display = 'block';
+            document.getElementById('input_message').innerText = '';
+            document.getElementById('code_input').value = '';
+        }
+
+        // Handle safe code submission
+        document.getElementById('submit_code').addEventListener('click', () => {
+            const code = document.getElementById('code_input').value;
+            if (code === '372') {
+                document.getElementById('input_message').innerText = "The safe opens, revealing a key.";
+                hasKey = true;
+                setTimeout(() => {
+                    document.getElementById('input_div').style.display = 'none';
+                }, 2000);
+            } else {
+                document.getElementById('input_message').innerText = "Incorrect code.";
+                document.getElementById('code_input').value = '';
+            }
+        });
+    </script>
+</body>
+</html>
